@@ -3,7 +3,15 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
 
   nitro: {
-    preset: 'cloudflare_pages',
+    // Cloudflare Workers preset. `deployConfig: true` makes Nitro generate a
+    // `wrangler.json` with the correct `main` entry point, `assets` directory
+    // and the `nodejs_compat` compatibility flag, so `npx wrangler deploy`
+    // works without any hand-written Wrangler config.
+    preset: 'cloudflare_module',
+    cloudflare: {
+      deployConfig: true,
+      nodeCompat: true,
+    },
   },
 
   devtools: { enabled: false },

@@ -6,6 +6,9 @@
 .cache
 dist
 
+# Cloudflare / Wrangler generated output
+.wrangler
+
 # Node dependencies
 node_modules
 

@@ -113,23 +113,25 @@ Reusable classes defined in `app/assets/css/main.css`: `.container-content`,
 
 ## Deployment
 
-The project targets **Cloudflare Pages** (`nitro.preset: 'cloudflare_pages'`).
+The project targets **Cloudflare Workers** (`nitro.preset: 'cloudflare_module'`).
 
 ```bash
-bun run build                                    # → dist/
-bunx wrangler pages dev dist                     # local preview of the real output
-bunx wrangler pages deploy dist                  # deploy
+bun run build                        # → .output/
+npx wrangler --cwd .output dev       # local preview of the real output
+npx wrangler deploy                  # deploy
 ```
 
-The `cloudflare_pages` preset emits a **Worker** (`dist/_worker.js`) that renders
-SSR at request time, so there is no `index.html` in the output — that is expected
-and not a misconfiguration.
+`cloudflare.deployConfig: true` makes Nitro generate `.output/server/wrangler.json`
+during the build with the correct `main` entry point, `assets` directory and the
+`nodejs_compat` flag. That is why **no `wrangler.toml` is needed in the repo** —
+`npx wrangler deploy` from the project root auto-redirects to the generated
+config and works as-is.
 
-Two things to know:
+> Use `npx wrangler pages deploy dist` only if you deploy to **Cloudflare Pages**
+> (the `cloudflare_pages` preset). The two are not interchangeable: running
+> `wrangler deploy` on a Pages bundle fails with *"Missing entry-point to Worker
+> script or to assets directory"*.
 
-- Nitro logs `[cloudflare] Node.js compatibility is not enabled` during the build.
-  It is a warning, not an error — the bundle is still produced. Add the
-  `nodejs_compat` compatibility flag if the deployed Worker hits a Node API.
-- Verify the real output, not just `bun run build`: `build` never executes the
-  SSR render path, so render-time failures and asset routing problems only
-  surface through `wrangler pages dev dist`.
+Verify the real output, not just `bun run build` — `build` never executes the SSR
+render path, so render-time failures and asset routing problems only surface
+through `wrangler dev`.

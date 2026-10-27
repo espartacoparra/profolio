@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Espartaco Parra monogram">
+  <defs>
+    <linearGradient id="brand-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="45%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#22d3ee" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#brand-gradient)" />
+  <path
+    d="M15 44V20h5.6l7.6 12.4L35.8 20H41v24h-5V28.6l-8 12.6-8-12.6V44h-5Z"
+    fill="#ffffff"
+  />
+  <path
+    d="M44 44h-5V20h5v24Z"
+    fill="#ffffff"
+    opacity="0.92"
+  />
+</svg>

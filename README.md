@@ -39,12 +39,43 @@ tailwind.config.ts        Design tokens: colors, type scale, shadows, keyframes
 
 ## Editing content
 
-**Everything on the page lives in `app/data/portfolio.ts`.** No component hardcodes
-copy — change the data file and the whole site updates. It is typed, so a missing
-field is a compile error rather than a blank spot in the UI.
+**Everything on the page lives in `app/data/`.** No component hardcodes copy —
+change the data files and the whole site updates.
+
+```
+app/data/portfolio.ts       English content (base) + shared proper nouns
+app/data/portfolio.es.ts    Spanish translation of the content prose
+app/data/locales.ts         UI string dictionaries (en / es)
+```
 
 Sections exported: `profile`, `socialLinks`, `stats`, `skillGroups`, `experiences`,
 `highlights`, `education`, `certifications`, `languages`, `marqueeTechnologies`.
+
+## Bilingual EN/ES
+
+The site ships in English and Spanish. The globe button in the header (next to
+the theme toggle) switches the whole page, and the choice persists in
+`localStorage`.
+
+Two layers of translation, both required:
+
+1. **UI strings** → `app/data/locales.ts`. The `en` dictionary defines the
+   shape; `es` is typed as the same `Dictionary`, so a missing or misspelled
+   key in Spanish is a compile error.
+2. **Content prose** → `app/data/portfolio.es.ts` mirrors the CV copy in
+   Spanish. Company names, technology names, institution names and dates are
+   deliberately **not** translated — they are proper nouns.
+
+Use `useLocale()` in any component:
+
+```ts
+const { t, content } = useLocale()
+// t.value.nav.about        → UI string for the active locale
+// content.value.experiences → content for the active locale
+```
+
+Proper nouns (company names, tech names, cities, dates, contact details) stay
+untranslated in both locales.
 
 ## Design system
 
@@ -71,8 +102,34 @@ Reusable classes defined in `app/assets/css/main.css`: `.container-content`,
 
 ## Notes
 
-- The CV PDF is served from `public/` so the "Download CV" button works in both
-  `build` and `generate` output.
+- The CV PDF is served from `public/espartaco-parra-cv.pdf` so the "Download CV"
+  button works in every build output. The filename is deliberately URL-safe —
+  Cloudflare Pages' asset router does not match URL-encoded paths to files whose
+  names contain literal spaces, so the original `"Espartaco Parra cv-updated.pdf"`
+  name returned 404 in production while working locally.
 - `ogImage` currently points at `favicon.svg`; replace with a 1200×630 PNG before launch.
 - Update the canonical domain in `nuxt.config.ts` / `app/pages/index.vue` to the
   real production URL.
+
+## Deployment
+
+The project targets **Cloudflare Pages** (`nitro.preset: 'cloudflare_pages'`).
+
+```bash
+bun run build                                    # → dist/
+bunx wrangler pages dev dist                     # local preview of the real output
+bunx wrangler pages deploy dist                  # deploy
+```
+
+The `cloudflare_pages` preset emits a **Worker** (`dist/_worker.js`) that renders
+SSR at request time, so there is no `index.html` in the output — that is expected
+and not a misconfiguration.
+
+Two things to know:
+
+- Nitro logs `[cloudflare] Node.js compatibility is not enabled` during the build.
+  It is a warning, not an error — the bundle is still produced. Add the
+  `nodejs_compat` compatibility flag if the deployed Worker hits a Node API.
+- Verify the real output, not just `bun run build`: `build` never executes the
+  SSR render path, so render-time failures and asset routing problems only
+  surface through `wrangler pages dev dist`.

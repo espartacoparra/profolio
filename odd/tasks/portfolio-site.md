@@ -198,10 +198,11 @@ OUT OF SCOPE:
 - [ ] Verify: build + generate pass, both locales render fully
 
 ### T14 — Verification
-- [ ] Real browser check: switch to ES, confirm every section is Spanish
-- [ ] Persistence check: reload keeps ES
-- [ ] No console errors, no hydration mismatch warnings, no horizontal overflow at 375/768/1440
-- [ ] Screenshot both locales
+- [x] Real browser check: switch to ES, confirm every section is Spanish
+- [x] Persistence check: reload keeps ES
+- [x] No console errors, no hydration mismatch warnings, no horizontal overflow at 375/768/1440
+- [x] Screenshot both locales
+- [x] TypeScript parity guarantee proven in both directions
 
 ## Acceptance criteria
 1. Switching to Spanish translates EVERY visible string — hero, nav, all section headings and ledes, all 6 job descriptions and their bullet lists, all 6 highlights, all stat labels/details, skill group titles, credentials, contact cards, footer.
@@ -220,11 +221,27 @@ OUT OF SCOPE:
 ## Progress
 | Task | Status | Route | Verification |
 | --- | --- | --- | --- |
-| T10 | pending | inline | — |
-| T11 | pending | inline | — |
-| T12 | pending | delegated | — |
-| T13 | pending | delegated | — |
-| T14 | pending | inline | — |
+| T10 | done | inline | typed EN/ES dictionaries + ES content module |
+| T11 | done | inline | `useLocale` composable, SSR-safe, persistence |
+| T12 | done | inline | `LocaleSwitcher.vue` in header next to theme toggle |
+| T13 | done | delegated | 8 components rewired; 0 hardcoded English remaining |
+| T14 | done | inline | browser-verified both locales, 3 viewports, 0 errors |
+
+## Corrections applied during the bilingual build
+1. **SSR-breaking bug (caught by the delegated writer).** `LocaleSwitcher.vue` referenced `LOCALE_LABELS` as a bare global, but Nuxt 4 only auto-imports from `app/composables/**` and `app/utils/**` — NOT `app/data/**`. This threw `ReferenceError` during SSR and 500'd every route. Fixed by using the already-destructured `localeLabels`.
+2. **Dictionary typing was too strict.** `export const en = {...} as const` made every value a literal type, so `es: Dictionary = {...}` rejected EVERY translated string as incompatible. Replaced with a `Widen<T>` mapped type that keeps the key structure exact while widening leaf values to `string`. Proven in both directions: removing one ES key produces `TS2741: Property 'title' is missing`; a complete ES dictionary compiles clean.
+
+## Verification evidence (real browser, Chromium 1248)
+- Language switch `en → es` confirmed at 375 / 768 / 1440 (`aria-label`: "Switch language to Español").
+- Persistence confirmed: `<html lang>` stays `es` after reload.
+- `leftoverEnglish: []` — 17 English UI strings audited, none remain in ES mode.
+- All 7 sections render translated: Sobre mí / Habilidades / Experiencia / Stack / Credenciales / Contacto / footer.
+- Mobile nav labels verified: `["Sobre mí","Habilidades","Experiencia","Contacto"]`.
+- Zero console errors, zero page errors, no horizontal overflow in either locale.
+- `bun run generate` PASS — 4 routes prerendered, no 500s.
+
+## Note on `vue-tsc`
+`vue-tsc` is broken in this environment (`ERR_PACKAGE_PATH_NOT_EXPORTED` — incompatible with the installed TypeScript). The parity guarantee was verified with plain `tsc --noEmit --ignoreConfig --strict` against `app/data/locales.ts` instead, which exercises the same type constraints.
 
 ## Commits
 No commits made — per the user's commit policy, changes are left in the working tree for review.

@@ -73,7 +73,7 @@ const emit = defineEmits<{
           style="animation-delay: 320ms"
         >
           <a
-            href="/Espartaco%20Parra%20cv-updated.pdf"
+            href="/espartaco-parra-cv.pdf"
             class="btn-primary"
             download
             @click="emit('download-cv')"

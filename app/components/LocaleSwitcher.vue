@@ -16,8 +16,8 @@ onMounted(() => {
   mounted.value = true
 })
 
-const target = LOCALE_LABELS[nextLocale.value]
-const current = LOCALE_LABELS[locale.value]
+const target = localeLabels[nextLocale.value]
+const current = localeLabels[locale.value]
 
 const label = computed(() => t.value.locale.switchTo(target.english))
 </script>

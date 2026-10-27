@@ -162,7 +162,28 @@ export const en = {
   },
 } as const
 
-export type Dictionary = typeof en
+/**
+ * The dictionary shape.
+ *
+ * `en` is declared with `as const`, so its keys AND its value types are
+ * literal. That literal typing is too strict for a translated dictionary —
+ * every Spanish string would be rejected as incompatible with its English
+ * counterpart.
+ *
+ * `Dictionary` therefore widens the leaf values to `string` (and functions to
+ * their general signature) while keeping the KEY STRUCTURE exact. The result:
+ * a missing or misspelled key in `es` is a compile error, but a legitimately
+ * different translated value is perfectly fine.
+ */
+type Widen<T> = T extends (...args: infer A) => infer R
+  ? (...args: A) => R
+  : T extends string
+    ? string
+    : T extends readonly (infer U)[]
+      ? Widen<U>[]
+      : { [K in keyof T]: Widen<T[K]> }
+
+export type Dictionary = Widen<typeof en>
 
 export const es: Dictionary = {
   meta: {

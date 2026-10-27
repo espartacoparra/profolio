@@ -2,6 +2,10 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
 
+  nitro: {
+    preset: 'cloudflare_pages',
+  },
+
   devtools: { enabled: false },
 
   css: ['~/assets/css/main.css'],

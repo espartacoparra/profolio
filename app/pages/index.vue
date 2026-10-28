@@ -1,9 +1,11 @@
 <script setup lang="ts">
 const { t, content, locale, initLocale } = useLocale()
+const { initTheme } = useTheme()
 
-// Resolve the persisted locale on the client only — never during SSR.
+// Resolve the persisted locale and theme on the client only — never during SSR.
 onMounted(() => {
   initLocale()
+  initTheme()
 })
 
 // Locale-aware SEO metadata.

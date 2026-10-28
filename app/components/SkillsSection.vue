@@ -15,6 +15,23 @@ const icons: Record<string, string> = {
   tool: 'M14.7 6.3a4 4 0 0 0 5.3 5.3l-9 9a2.8 2.8 0 0 1-4-4l9-9ZM6 6l3 3',
   method: 'M12 3v18M4 7h16M4 7l4-4M4 7l4 4M20 7l-4-4m4 4-4 4',
 }
+
+/**
+ * Skill card elements, tracked so each one can tilt toward the cursor.
+ *
+ * `skillGroups` is a fixed list, so the card count is known during setup
+ * and every card can get its own tilt target without post-mount wiring.
+ */
+const cardEls = ref<(HTMLElement | null)[]>([])
+
+/** Collects the card element rendered by the `v-for` below. */
+function setCardEl(el: Element | ComponentPublicInstance | null, index: number) {
+  cardEls.value[index] = el instanceof HTMLElement ? el : null
+}
+
+for (const index of skillGroups.value.map((_, i) => i)) {
+  usePointerTilt(computed(() => cardEls.value[index] ?? null), { max: 5 })
+}
 </script>
 
 <template>
@@ -32,7 +49,10 @@ const icons: Record<string, string> = {
 
       <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <ScrollReveal v-for="(group, index) in skillGroups" :key="group.title" :delay="index * 80">
-          <article class="card card-hover h-full p-6">
+          <article
+            :ref="(el) => setCardEl(el as Element | ComponentPublicInstance | null, index)"
+            class="card card-hover-border tilt-card h-full p-6"
+          >
             <div class="flex items-center gap-3">
               <span
                 class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600 dark:bg-brand-400/15 dark:text-brand-300"

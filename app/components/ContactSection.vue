@@ -48,6 +48,29 @@ const contactLinks = computed(() =>
 
 /** Primary call to action — the email link. */
 const emailLink = computed(() => contactLinks.value.find((link) => link.iconKey === 'email'))
+
+/**
+ * Contact card elements, tracked so each one can tilt toward the cursor.
+ *
+ * `socialLinks` is a static import, so the card count is known during setup
+ * and each card can get its own tilt target without any post-mount wiring.
+ */
+const cardEls = ref<(HTMLElement | null)[]>([])
+
+/** Collects the card element rendered by the `v-for` below. */
+function setCardEl(el: Element | ComponentPublicInstance | null, index: number) {
+  cardEls.value[index] = el instanceof HTMLElement ? el : null
+}
+
+/**
+ * Each contact card tilts toward the cursor.
+ *
+ * `usePointerTilt` only attaches on fine-pointer devices and is a no-op
+ * under reduced motion, so the cards stay completely static elsewhere.
+ */
+for (const index of socialLinks.map((_, i) => i)) {
+  usePointerTilt(computed(() => cardEls.value[index] ?? null), { max: 5 })
+}
 </script>
 
 <template>
@@ -57,10 +80,24 @@ const emailLink = computed(() => contactLinks.value.find((link) => link.iconKey 
     aria-labelledby="contact-heading"
   >
     <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-      <div class="absolute inset-0 bg-grid-pattern bg-grid opacity-50 dark:opacity-90" />
-      <div
-        class="absolute -bottom-40 left-1/2 h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-brand-500/15 blur-3xl dark:bg-brand-600/20"
-      />
+      <!-- Grid plane -->
+      <ParallaxLayer as="div" :speed="16" class="absolute inset-0">
+        <div class="grid-drift absolute -inset-[2.75rem] bg-grid-pattern bg-grid opacity-50 dark:opacity-90" />
+      </ParallaxLayer>
+
+      <!-- Centered glow plane — drifts against the scroll -->
+      <ParallaxLayer as="div" :speed="-60" class="absolute inset-0">
+        <div
+          class="absolute -bottom-40 left-1/2 h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-brand-500/15 blur-3xl dark:bg-brand-600/20"
+        />
+      </ParallaxLayer>
+
+      <!-- Off-centre accent plane — drifts with the scroll, at a different rate -->
+      <ParallaxLayer as="div" :speed="80" class="absolute inset-0">
+        <div
+          class="absolute -right-24 top-0 h-[22rem] w-[22rem] rounded-full bg-accent-400/10 blur-3xl dark:bg-accent-500/12"
+        />
+      </ParallaxLayer>
     </div>
 
     <div class="container-content">
@@ -78,8 +115,9 @@ const emailLink = computed(() => contactLinks.value.find((link) => link.iconKey 
       <div class="mx-auto mt-12 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <ScrollReveal v-for="(link, index) in contactLinks" :key="link.iconKey" :delay="index * 80">
           <a
+            :ref="(el) => setCardEl(el as Element | ComponentPublicInstance | null, index)"
             :href="link.href"
-            class="card card-hover group flex h-full flex-col p-6"
+            class="card card-hover-border tilt-card group flex h-full flex-col p-6"
             :target="link.href.startsWith('http') ? '_blank' : undefined"
             :rel="link.href.startsWith('http') ? 'noopener noreferrer' : undefined"
           >

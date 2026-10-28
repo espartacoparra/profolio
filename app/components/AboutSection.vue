@@ -3,6 +3,20 @@ const { t, content } = useLocale()
 
 const profile = computed(() => content.value.profile)
 const stats = computed(() => content.value.stats)
+
+/**
+ * Stat card elements, tracked so each one can tilt toward the cursor.
+ */
+const statEls = ref<(HTMLElement | null)[]>([])
+
+/** Collects the stat card element rendered by the `v-for` below. */
+function setStatEl(el: Element | ComponentPublicInstance | null, index: number) {
+  statEls.value[index] = el instanceof HTMLElement ? el : null
+}
+
+for (const index of stats.value.map((_, i) => i)) {
+  usePointerTilt(computed(() => statEls.value[index] ?? null), { max: 5 })
+}
 </script>
 
 <template>
@@ -42,8 +56,13 @@ const stats = computed(() => content.value.stats)
         <!-- Stats -->
         <div class="grid gap-4 sm:grid-cols-2 lg:gap-5">
           <ScrollReveal v-for="(stat, index) in stats" :key="stat.label" :delay="index * 90">
-            <article class="card card-hover h-full p-6">
-              <p class="font-display text-display-sm leading-none text-gradient">{{ stat.value }}</p>
+            <article
+              :ref="(el) => setStatEl(el as Element | ComponentPublicInstance | null, index)"
+              class="card card-hover-border tilt-card h-full p-6"
+            >
+              <p class="font-display text-display-sm leading-none text-gradient">
+                <CountUpValue :value="stat.value" />
+              </p>
               <p class="mt-3 text-sm font-semibold text-surface-900 dark:text-white">{{ stat.label }}</p>
               <p class="mt-1.5 text-sm leading-relaxed text-surface-600 dark:text-surface-400">
                 {{ stat.detail }}

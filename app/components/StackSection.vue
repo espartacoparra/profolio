@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { marqueeTechnologies } from '~/data/portfolio'
+import { onFrame, useParallax } from '~/composables/useParallax'
 
 const { t, content } = useLocale()
 
@@ -12,8 +13,114 @@ const icons: Record<string, string> = {
   bolt: 'M13 2 4 14h7l-1 8 9-12h-7l1-8Z',
   layers: 'm12 3 9 5-9 5-9-5 9-5Zm9 9-9 5-9-5m18 4-9 5-9-5',
   grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
-  target: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0-3a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z',
+  target: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0-3a3 3 0 1 0 0-2 3 3 0 0 0 0 2Z',
 }
+
+/**
+ * Highlight card elements, tracked so each one can tilt toward the cursor.
+ */
+const cardEls = ref<(HTMLElement | null)[]>([])
+
+/** Collects the card element rendered by the `v-for` below. */
+function setCardEl(el: Element | ComponentPublicInstance | null, index: number) {
+  cardEls.value[index] = el instanceof HTMLElement ? el : null
+}
+
+for (const index of highlights.value.map((_, i) => i)) {
+  usePointerTilt(computed(() => cardEls.value[index] ?? null), { max: 5 })
+}
+
+/**
+ * Scroll-coupled marquee.
+ *
+ * The horizontal offset is a function of the accumulated scroll delta:
+ * scrolling down pushes the strip one way, scrolling up reverses it, and a
+ * slow idle drift keeps it moving when the reader stops scrolling.
+ *
+ * The offset is written imperatively to the element's `transform`, so the
+ * scroll never triggers a Vue re-render.
+ */
+const { isReducedMotion } = useParallax()
+
+const marqueeStrip = ref<HTMLElement | null>(null)
+
+/** Pixels travelled per pixel of scroll delta. */
+const SCROLL_GAIN = 0.35
+
+/** Pixels travelled per second while the reader is idle. */
+const IDLE_DRIFT = 18
+
+/** Accumulated horizontal offset, in pixels. */
+let position = 0
+
+/** Width of a single copy of the technology list, in pixels. */
+let copyWidth = 0
+
+/** True while the legacy fixed-timer marquee should be used. */
+const useStaticMarquee = ref(false)
+
+let disposeFrame: (() => void) | null = null
+let measureRaf: number | null = null
+
+/** Measures the width of one copy of the list. */
+function measureCopy() {
+  const strip = marqueeStrip.value
+  if (!strip) return
+
+  const firstCopy = strip.firstElementChild
+  if (!firstCopy) return
+
+  const width = firstCopy.getBoundingClientRect().width
+  if (width > 0) {
+    copyWidth = width
+  }
+}
+
+/** Writes the current offset to the strip. */
+function render() {
+  const strip = marqueeStrip.value
+  if (!strip || copyWidth <= 0) return
+
+  // Wrap within a single copy so the offset never grows unbounded and the
+  // strip never exposes a gap — the copies are identical, so the wrap is
+  // invisible to the reader.
+  const offset = -(((position % copyWidth) + copyWidth) % copyWidth)
+  strip.style.transform = `translate3d(${offset.toFixed(2)}px, 0, 0)`
+}
+
+onMounted(() => {
+  if (!import.meta.client) return
+
+  if (isReducedMotion.value) {
+    // Reduced motion: fall back to the legacy CSS loop, which the global
+    // reduced-motion block also neutralises.
+    useStaticMarquee.value = true
+    return
+  }
+
+  // Measure after the first layout so the list has its final width.
+  measureRaf = window.requestAnimationFrame(() => {
+    measureCopy()
+    render()
+  })
+
+  disposeFrame = onFrame((state) => {
+    // The engine reports velocity in px per frame; the idle drift is
+    // expressed per second and converted to the same time base.
+    position += state.velocity * SCROLL_GAIN + IDLE_DRIFT / 60
+    render()
+  })
+})
+
+onBeforeUnmount(() => {
+  disposeFrame?.()
+  disposeFrame = null
+
+  if (measureRaf !== null) {
+    window.cancelAnimationFrame(measureRaf)
+    measureRaf = null
+  }
+})
 </script>
 
 <template>
@@ -35,7 +142,10 @@ const icons: Record<string, string> = {
 
       <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <ScrollReveal v-for="(highlight, index) in highlights" :key="highlight.title" :delay="index * 80">
-          <article class="card card-hover flex h-full flex-col p-6">
+          <article
+            :ref="(el) => setCardEl(el as Element | ComponentPublicInstance | null, index)"
+            class="card card-hover-border tilt-card flex h-full flex-col p-6"
+          >
             <span
               class="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-glow"
               aria-hidden="true"
@@ -75,16 +185,27 @@ const icons: Record<string, string> = {
           class="relative mt-14 overflow-hidden rounded-2xl border border-surface-200 bg-white py-6 dark:border-white/10 dark:bg-surface-900/60"
         >
           <div
-            class="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-white to-transparent dark:from-surface-900"
+            class="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-white to-transparent sm:w-16 dark:from-surface-900"
           />
           <div
-            class="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-white to-transparent dark:from-surface-900"
+            class="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-white to-transparent sm:w-16 dark:from-surface-900"
           />
-          <ul class="flex w-max animate-marquee gap-3 motion-reduce:animate-none">
-            <li v-for="(technology, index) in [...marqueeTechnologies, ...marqueeTechnologies]" :key="`${technology}-${index}`" class="shrink-0">
-              <span class="chip whitespace-nowrap px-4 py-1.5 text-sm">{{ technology }}</span>
-            </li>
-          </ul>
+          <div
+            ref="marqueeStrip"
+            class="marquee-strip flex w-max"
+            :class="{ 'marquee-static': useStaticMarquee }"
+          >
+            <ul
+              v-for="copy in 3"
+              :key="copy"
+              class="flex gap-3 pr-3"
+              :aria-hidden="copy > 1 ? 'true' : undefined"
+            >
+              <li v-for="technology in marqueeTechnologies" :key="technology" class="shrink-0">
+                <span class="chip whitespace-nowrap px-3 py-1.5 text-sm sm:px-4">{{ technology }}</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </ScrollReveal>
     </div>

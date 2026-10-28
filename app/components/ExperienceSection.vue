@@ -2,6 +2,20 @@
 const { t, content } = useLocale()
 
 const experiences = computed(() => content.value.experiences)
+
+/**
+ * Role card elements, tracked so each one can tilt toward the cursor.
+ */
+const cardEls = ref<(HTMLElement | null)[]>([])
+
+/** Collects the card element rendered by the `v-for` below. */
+function setCardEl(el: Element | ComponentPublicInstance | null, index: number) {
+  cardEls.value[index] = el instanceof HTMLElement ? el : null
+}
+
+for (const index of experiences.value.map((_, i) => i)) {
+  usePointerTilt(computed(() => cardEls.value[index] ?? null), { max: 5 })
+}
 </script>
 
 <template>
@@ -19,7 +33,10 @@ const experiences = computed(() => content.value.experiences)
 
       <ol class="relative mt-12 space-y-8 border-l border-surface-200 pl-6 sm:pl-8 dark:border-white/10">
         <ScrollReveal v-for="(experience, index) in experiences" :key="`${experience.company}-${experience.period}`" as="li" :delay="index * 70">
-          <article class="card card-hover relative p-6 sm:p-7">
+          <article
+            :ref="(el) => setCardEl(el as Element | ComponentPublicInstance | null, index)"
+            class="card card-hover-border tilt-card relative p-6 sm:p-7"
+          >
             <!-- Timeline marker -->
             <span
               class="absolute -left-[2.3125rem] top-7 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-white bg-brand-500 sm:-left-[2.5625rem] dark:border-surface-950"

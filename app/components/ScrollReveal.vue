@@ -16,12 +16,29 @@ const props = withDefaults(
     delay?: number
     /** Render as a semantic element of choice. */
     as?: string
+    /** Direction the content travels from when it is revealed. */
+    from?: 'up' | 'left' | 'right' | 'scale'
   }>(),
   {
     delay: 0,
     as: 'div',
+    from: 'up',
   },
 )
+
+/** Maps a reveal variant to its semantic hidden-state class. */
+const hiddenClass = computed(() => {
+  switch (props.from) {
+    case 'left':
+      return 'reveal-left'
+    case 'right':
+      return 'reveal-right'
+    case 'scale':
+      return 'reveal-scale'
+    default:
+      return 'reveal'
+  }
+})
 
 const root = ref<HTMLElement | null>(null)
 const visible = ref(false)
@@ -74,7 +91,7 @@ onBeforeUnmount(() => {
     :is="props.as"
     ref="root"
     :class="[
-      armed && !visible ? 'reveal' : '',
+      armed && !visible ? hiddenClass : '',
       visible ? 'reveal-visible' : '',
     ]"
     :style="armed && !visible ? { transitionDelay: `${props.delay}ms` } : undefined"

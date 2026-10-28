@@ -16,24 +16,33 @@ onMounted(() => {
   mounted.value = true
 })
 
-const target = localeLabels[nextLocale.value]
-const current = localeLabels[locale.value]
+/**
+ * The language the user will switch TO.
+ *
+ * These must be computed, not plain values: `nextLocale` and `locale` are
+ * refs, and dereferencing them once during setup freezes the label at its
+ * initial value. The button would then keep advertising the language it was
+ * pointing at before the first switch, instead of following the active
+ * locale.
+ */
+const target = computed(() => localeLabels[nextLocale.value])
+const current = computed(() => localeLabels[locale.value])
 
-const label = computed(() => t.value.locale.switchTo(target.english))
+const label = computed(() => t.value.locale.switchTo(target.value.english))
 </script>
 
 <template>
   <!-- Placeholder: identical on server and client until mounted. -->
   <div
     v-if="!mounted"
-    class="h-10 w-10 rounded-full border border-surface-200 bg-white/60 dark:border-white/15 dark:bg-white/5"
+    class="h-11 w-11 rounded-full border border-surface-200 bg-white/60 dark:border-white/15 dark:bg-white/5"
     aria-hidden="true"
   />
 
   <button
     v-else
     type="button"
-    class="group relative inline-flex h-10 min-w-[4.25rem] items-center justify-center gap-1.5 rounded-full border border-surface-200 bg-white/70 px-3 text-sm font-semibold text-surface-600 transition hover:border-brand-500/50 hover:text-brand-600 dark:border-white/15 dark:bg-white/5 dark:text-surface-200 dark:hover:border-brand-400/40 dark:hover:text-brand-300"
+    class="group relative inline-flex h-11 min-w-[4.25rem] items-center justify-center gap-1.5 rounded-full border border-surface-200 bg-white/70 px-3 text-sm font-semibold text-surface-600 transition hover:border-brand-500/50 hover:text-brand-600 dark:border-white/15 dark:bg-white/5 dark:text-surface-200 dark:hover:border-brand-400/40 dark:hover:text-brand-300"
     :aria-label="label"
     :title="label"
     :aria-pressed="locale === 'es'"

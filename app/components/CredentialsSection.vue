@@ -4,6 +4,20 @@ const { t, content } = useLocale()
 const education = computed(() => content.value.education)
 const certifications = computed(() => content.value.certifications)
 const languages = computed(() => content.value.languages)
+
+/**
+ * Credential card elements, tracked so each one can tilt toward the cursor.
+ */
+const cardEls = ref<(HTMLElement | null)[]>([])
+
+/** Collects the card element rendered below. */
+function setCardEl(el: Element | ComponentPublicInstance | null, index: number) {
+  cardEls.value[index] = el instanceof HTMLElement ? el : null
+}
+
+for (const index of [0, 1, 2]) {
+  usePointerTilt(computed(() => cardEls.value[index] ?? null), { max: 5 })
+}
 </script>
 
 <template>
@@ -19,7 +33,10 @@ const languages = computed(() => content.value.languages)
       <div class="mt-12 grid gap-6 lg:grid-cols-3">
         <!-- Education -->
         <ScrollReveal>
-          <article class="card h-full p-6">
+          <article
+            :ref="(el) => setCardEl(el as Element | ComponentPublicInstance | null, 0)"
+            class="card card-hover-border tilt-card h-full p-6"
+          >
             <span
               class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600 dark:bg-brand-400/15 dark:text-brand-300"
               aria-hidden="true"
@@ -57,7 +74,10 @@ const languages = computed(() => content.value.languages)
 
         <!-- Certifications -->
         <ScrollReveal :delay="90">
-          <article class="card h-full p-6">
+          <article
+            :ref="(el) => setCardEl(el as Element | ComponentPublicInstance | null, 1)"
+            class="card card-hover-border tilt-card h-full p-6"
+          >
             <span
               class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600 dark:bg-brand-400/15 dark:text-brand-300"
               aria-hidden="true"
@@ -99,7 +119,10 @@ const languages = computed(() => content.value.languages)
 
         <!-- Languages -->
         <ScrollReveal :delay="180">
-          <article class="card h-full p-6">
+          <article
+            :ref="(el) => setCardEl(el as Element | ComponentPublicInstance | null, 2)"
+            class="card card-hover-border tilt-card h-full p-6"
+          >
             <span
               class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600 dark:bg-brand-400/15 dark:text-brand-300"
               aria-hidden="true"

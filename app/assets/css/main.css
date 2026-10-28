@@ -13,8 +13,16 @@
 
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 5rem;
+    scroll-padding-top: 4.5rem;
     -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (min-width: 640px) {
+    html {
+      scroll-padding-top: 5rem;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -76,6 +84,17 @@
     @apply hover:-translate-y-1 hover:border-brand-500/40 hover:shadow-glow dark:hover:border-brand-400/30 dark:hover:shadow-glow;
   }
 
+  /**
+   * Border + shadow half of `.card-hover`, without the translate.
+   *
+   * Used on cards whose transform is owned by `.tilt-card`, so the hover
+   * lift is expressed through `--tilt-lift` instead of a competing
+   * Tailwind transform utility.
+   */
+  .card-hover-border {
+    @apply hover:border-brand-500/40 hover:shadow-glow active:scale-[0.98] dark:hover:border-brand-400/30 dark:hover:shadow-glow;
+  }
+
   .chip {
     @apply inline-flex items-center rounded-full border border-surface-200 bg-surface-50 px-3 py-1 text-xs font-medium text-surface-600 transition;
     @apply dark:border-white/10 dark:bg-white/5 dark:text-surface-300;
@@ -86,11 +105,11 @@
   }
 
   .btn-primary {
-    @apply btn bg-brand-gradient text-white shadow-glow hover:brightness-110 active:brightness-95;
+    @apply btn min-h-11 bg-brand-gradient text-white shadow-glow hover:brightness-110 active:scale-[0.98] active:brightness-95;
   }
 
   .btn-ghost {
-    @apply btn border border-surface-200 bg-white/60 text-surface-700 hover:border-brand-500/50 hover:text-brand-600;
+    @apply btn min-h-11 border border-surface-200 bg-white/60 text-surface-700 hover:border-brand-500/50 hover:text-brand-600 active:scale-[0.98];
     @apply dark:border-white/15 dark:bg-white/5 dark:text-surface-200 dark:hover:border-brand-400/40 dark:hover:text-brand-300;
   }
 
@@ -108,5 +127,287 @@
 
   .reveal-visible {
     @apply opacity-100 translate-y-0 transition-[opacity,transform] duration-700 ease-spring;
+  }
+
+  /**
+   * Direction-aware reveal variants.
+   *
+   * Each hidden state pairs with a matching reset below, so a single
+   * `.reveal-visible` rule can restore the identity transform for every
+   * variant without the component having to know which one it rendered.
+   */
+  .reveal-left {
+    @apply opacity-0 -translate-x-6;
+  }
+
+  .reveal-right {
+    @apply opacity-0 translate-x-6;
+  }
+
+  .reveal-scale {
+    @apply opacity-0 scale-95;
+  }
+
+  .reveal-left.reveal-visible,
+  .reveal-right.reveal-visible,
+  .reveal-scale.reveal-visible {
+    @apply translate-x-0 scale-100;
+  }
+
+  /* --- Motion layer --------------------------------------------------- */
+
+  /**
+   * Consumes the parallax custom properties written by `useParallax`.
+   * `translate3d` promotes the element to its own compositor layer, so the
+   * movement never triggers layout or paint.
+   */
+  .parallax-shift {
+    transform: translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 0);
+    will-change: transform;
+  }
+
+  /**
+   * Counter-parallax: moves opposite to the scroll, for content that should
+   * feel anchored while its surroundings drift.
+   */
+  .parallax-counter {
+    transform: translate3d(
+      calc(var(--parallax-x, 0px) * -0.5),
+      calc(var(--parallax-y, 0px) * -0.5),
+      0
+    );
+  }
+
+  /**
+   * Ambient drifting orbs. Three layers drift at different speeds and sizes
+   * to create a slow, non-repeating-feeling background movement.
+   */
+  .ambient-orb {
+    animation: ambient-drift 22s ease-in-out infinite;
+  }
+
+  .ambient-orb-slow {
+    animation: ambient-drift 34s ease-in-out infinite reverse;
+  }
+
+  .ambient-orb-fast {
+    animation: ambient-drift 16s ease-in-out infinite;
+  }
+
+  /**
+   * A slowly drifting grid. `background-position` is cheap on the compositor
+   * because the pattern is a repeating gradient — but to be safe the grid
+   * drifts via `transform` on a oversized layer instead.
+   */
+  .grid-drift {
+    animation: grid-drift 40s linear infinite;
+  }
+
+  /**
+   * Mobile motion budget: hold the ambient planes still and pause the grid
+   * so the compositor is not asked to repaint several large blurred layers
+   * while the page scrolls. Scroll-linked parallax remains active.
+   */
+  @media (max-width: 639px) {
+    .ambient-orb,
+    .ambient-orb-slow,
+    .ambient-orb-fast,
+    .grid-drift {
+      animation-play-state: paused;
+    }
+  }
+
+  /** Scroll progress bar driven by the header's scaleX transform. */
+  .scroll-progress-bar {
+    transform: scaleX(var(--scroll-progress, 0));
+    transform-origin: left center;
+  }
+
+  /**
+   * Cursor-reactive 3D tilt. The rotation angles are written by the pointer
+   * composable as custom properties; the element itself owns the transform so
+   * the transition stays on the compositor.
+   *
+   * The hover lift lives INSIDE this transform via `--tilt-lift`, because a
+   * Tailwind `-translate-y-1` utility would fight for the same `transform`
+   * property and win or lose depending on stylesheet order. Tilted cards
+   * therefore use `.card-hover-border` (border/shadow only) instead of
+   * `.card-hover`.
+   */
+  .tilt-card {
+    transform: perspective(600px)
+      rotateX(var(--tilt-x, 0deg))
+      rotateY(var(--tilt-y, 0deg))
+      translate3d(0, var(--tilt-lift, 0px), 0);
+    transform-style: preserve-3d;
+    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @media (min-width: 640px) {
+    .tilt-card {
+      transform: perspective(1000px)
+        rotateX(var(--tilt-x, 0deg))
+        rotateY(var(--tilt-y, 0deg))
+        translate3d(0, var(--tilt-lift, 0px), 0);
+    }
+  }
+
+  .tilt-card:hover {
+    --tilt-lift: -4px;
+  }
+
+  .tilt-card-reset {
+    transition: transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /**
+   * Magnetic button — the pointer attraction offset is written as a custom
+   * property by the pointer composable.
+   */
+  .magnetic {
+    transform: translate3d(
+      var(--magnetic-x, 0px),
+      var(--magnetic-y, 0px),
+      0
+    );
+    transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .magnetic-reset {
+    transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /**
+   * Sheen sweep across the primary CTA. Runs on hover only.
+   */
+  .sheen {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .sheen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      115deg,
+      transparent 30%,
+      rgb(255 255 255 / 0.35) 50%,
+      transparent 70%
+    );
+    transform: translateX(-120%);
+    transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sheen:hover::after {
+    transform: translateX(120%);
+  }
+
+  /**
+   * Animated nav underline driven by the active-section state.
+   */
+  .nav-active::after {
+    transform: scaleX(1);
+  }
+
+  /**
+   * Mobile variant of the active nav state — the mobile links do not carry
+   * the `.link-underline` pseudo-element, so they signal the active section
+   * with a background tint instead.
+   */
+  .nav-active-mobile {
+    @apply bg-brand-500/10 text-brand-600 dark:bg-white/10 dark:text-brand-300;
+  }
+
+  /**
+   * Scroll-coupled marquee strip.
+   *
+   * The horizontal offset is written imperatively as a `translate3d` by the
+   * stack section, so the element itself only owns the layout and the
+   * compositor hint. The strip is wider than the viewport by construction
+   * (the technology list is duplicated), which is what makes the offset
+   * wrap-around seamless.
+   */
+  .marquee-strip {
+    will-change: transform;
+  }
+
+  /**
+   * Legacy fixed-timer marquee, kept for the reduced-motion fallback.
+   */
+  .marquee-static {
+    animation: marquee-scroll 40s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-static {
+      animation: none !important;
+    }
+  }
+}
+
+@keyframes ambient-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(4%, -6%, 0) scale(1.08);
+  }
+  66% {
+    transform: translate3d(-5%, 4%, 0) scale(0.96);
+  }
+}
+
+@keyframes grid-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-44px, -44px, 0);
+  }
+}
+
+/**
+ * Legacy marquee loop, used only when the user asked for reduced motion.
+ * The strip renders three identical copies of the technology list, so
+ * translating exactly one third of it lands on an identical pixel column
+ * and the loop is seamless.
+ */
+@keyframes marquee-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-33.3333%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parallax-shift,
+  .parallax-counter,
+  .tilt-card,
+  .magnetic,
+  .marquee-strip {
+    transform: none !important;
+    will-change: auto !important;
+  }
+
+  .tilt-card,
+  .tilt-card:hover {
+    --tilt-lift: 0px !important;
+  }
+
+  .ambient-orb,
+  .ambient-orb-slow,
+  .ambient-orb-fast,
+  .grid-drift {
+    animation: none !important;
+  }
+
+  .sheen::after {
+    display: none;
   }
 }

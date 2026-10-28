@@ -52,52 +52,56 @@ const footerLinks = computed(() =>
     <div class="container-content py-12">
       <div class="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
         <!-- Identity -->
-        <div class="max-w-sm">
-          <div class="flex items-center gap-3">
-            <span
-              class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-sm font-bold text-white"
-              aria-hidden="true"
-            >
-              EP
-            </span>
-            <span class="text-sm font-bold text-surface-900 dark:text-white">{{ profile.name }}</span>
+        <ScrollReveal>
+          <div class="max-w-sm">
+            <div class="flex items-center gap-3">
+              <span
+                class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-sm font-bold text-white"
+                aria-hidden="true"
+              >
+                EP
+              </span>
+              <span class="text-sm font-bold text-surface-900 dark:text-white">{{ profile.name }}</span>
+            </div>
+            <p class="mt-4 text-sm leading-relaxed text-surface-600 dark:text-surface-400">
+              {{ t.footer.intro(profile.role, profile.location, profile.availability) }}
+            </p>
           </div>
-          <p class="mt-4 text-sm leading-relaxed text-surface-600 dark:text-surface-400">
-            {{ t.footer.intro(profile.role, profile.location, profile.availability) }}
-          </p>
-        </div>
+        </ScrollReveal>
 
         <!-- Contact links -->
-        <div>
-          <h2 class="text-xs font-semibold uppercase tracking-[0.16em] text-surface-500 dark:text-surface-400">
-            {{ t.footer.getInTouch }}
-          </h2>
-          <ul class="mt-4 flex flex-col gap-3">
-            <li v-for="link in footerLinks" :key="link.iconKey">
-              <a
-                :href="link.href"
-                class="group inline-flex items-center gap-2 text-sm text-surface-600 transition hover:text-brand-600 dark:text-surface-300 dark:hover:text-brand-300"
-                :external="link.href.startsWith('http') ? 'true' : undefined"
-                :target="link.href.startsWith('http') ? '_blank' : undefined"
-                :rel="link.href.startsWith('http') ? 'noopener noreferrer' : undefined"
-              >
-                <svg
-                  class="h-4 w-4 shrink-0 text-surface-400 transition group-hover:text-brand-500"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
+        <ScrollReveal :delay="100">
+          <div>
+            <h2 class="text-xs font-semibold uppercase tracking-[0.16em] text-surface-500 dark:text-surface-400">
+              {{ t.footer.getInTouch }}
+            </h2>
+            <ul class="mt-4 flex flex-col gap-1">
+              <li v-for="link in footerLinks" :key="link.iconKey">
+                <a
+                  :href="link.href"
+                  class="group inline-flex min-h-11 max-w-full items-center gap-2 break-words py-1.5 text-sm text-surface-600 transition hover:text-brand-600 active:scale-[0.98] dark:text-surface-300 dark:hover:text-brand-300"
+                  :external="link.href.startsWith('http') ? 'true' : undefined"
+                  :target="link.href.startsWith('http') ? '_blank' : undefined"
+                  :rel="link.href.startsWith('http') ? 'noopener noreferrer' : undefined"
                 >
-                  <path :d="iconPaths[link.iconKey]" />
-                </svg>
-                <span class="link-underline">{{ link.handle ?? link.label }}</span>
-              </a>
-            </li>
-          </ul>
-        </div>
+                  <svg
+                    class="h-4 w-4 shrink-0 text-surface-400 transition group-hover:text-brand-500"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path :d="iconPaths[link.iconKey]" />
+                  </svg>
+                  <span class="link-underline break-all">{{ link.handle ?? link.label }}</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </ScrollReveal>
       </div>
 
       <div
